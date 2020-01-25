@@ -228,7 +228,7 @@ public class ProductCode {
       Collection<ProductCode> collection = ProductCode.all(connection);
       
       if(!collection.contains(this)) {
-                PreparedStatement statement = getInsertQuery(connection);
+                PreparedStatement statement = getUpdateQuery(connection);
                 statement.setString(1, this.getCode());
                 statement.setString(2, String.valueOf(this.getDiscountCode()));
                 statement.setString(3, this.getDescription());
@@ -236,10 +236,10 @@ public class ProductCode {
       }
           //update
       else {
-                PreparedStatement statement = getUpdateQuery(connection);
-                statement.setString(1, String.valueOf(this.getDiscountCode()));
-                statement.setString(2, this.getDescription());
-                statement.setString(3, this.getCode());
+                PreparedStatement statement = getInsertQuery(connection);
+                statement.setString(1, this.getCode());
+                statement.setString(2, String.valueOf(this.getDiscountCode()));
+                statement.setString(3, this.getDescription());
                 statement.executeUpdate();
           //insert
       }
