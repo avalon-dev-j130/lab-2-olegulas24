@@ -1,11 +1,8 @@
 package ru.avalon.java.j30.labs;
 
-import static com.sun.org.apache.bcel.internal.Repository.instanceOf;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.IOException;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -53,7 +50,7 @@ public class ProductCode {
          */
         code = set.getString("PROD_CODE");
         discountCode = set.getString("DISCOUNT_CODE").charAt(0);
-        description = set.getString("DESCRIPTION");       
+        description = set.getString("DESCRIPTION");
     }
     /**
      * Возвращает код товара
@@ -114,7 +111,7 @@ public class ProductCode {
         /*
          * TODO #06 Реализуйте метод hashCode
          */
-        return Objects.hashCode(code);
+        return Objects.hash(code, discountCode, description);
     }
     /**
      * Сравнивает некоторый произвольный объект с текущим объектом типа 
@@ -126,14 +123,16 @@ public class ProductCode {
      */
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof ProductCode){
-            ProductCode productCode = (ProductCode) obj;
-            if(code.hashCode() == productCode.code.hashCode()) {        
-                return true;
-            }
-            else return false; 
-        }
-        else return false;
+        /*
+         * TODO #07 Реализуйте метод equals
+         */
+        if (this == obj) return true;
+        if (obj instanceof ProductCode) {
+            ProductCode other = (ProductCode) obj;
+            return (this.code.equals(other.code)) 
+                    && (this.discountCode == other.discountCode) 
+                    && (this.description.equals(other.description));
+        } return false;
     }
     /**
      * Возвращает строковое представление кода товара.
@@ -142,10 +141,10 @@ public class ProductCode {
      */
     @Override
     public String toString() {
-        
-        return "Product code: " + code + "\n" +
-               "Discount code: " + discountCode + "\n" +
-               "Description: " + description + "\n"; 
+        /*
+         * TODO #08 Реализуйте метод toString
+         */
+        return "Code: " + code + " | Discount code: " + discountCode + " | Description: " + description;
     }
     /**
      * Возвращает запрос на выбор всех записей из таблицы PRODUCT_CODE 
@@ -154,17 +153,13 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return Запрос в виде объекта класса {@link PreparedStatement}
      */
-    public static PreparedStatement getSelectQuery(Connection connection) throws SQLException {
+    public static PreparedStatement getSelectQuery(Connection connection) throws SQLException, IOException {
         /*
          * TODO #09 Реализуйте метод getSelectQuery
          */
-        String query = "SELECT PROD_CODE, DISCOUNT_CODE, DESCRIPTION FROM PRODUCT_CODE";
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        PreparedStatement preparedStatement = QueriesManager.getPreparedStatement(connection, "selectAll"); 
         return preparedStatement;
-        
-        }
-        
-    
+    }
     /**
      * Возвращает запрос на добавление записи в таблицу PRODUCT_CODE 
      * базы данных Sample
@@ -172,12 +167,12 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return Запрос в виде объекта класса {@link PreparedStatement}
      */
-    public static PreparedStatement getInsertQuery(Connection connection) throws SQLException {
+    public static PreparedStatement getInsertQuery(Connection connection) throws SQLException, IOException {
         /*
          * TODO #10 Реализуйте метод getInsertQuery
          */
-        String query = "Insert into Product_Code(PROD_CODE, DISCOUNT_CODE, DESCRIPTION) values (?, ?, ?)";
-        return connection.prepareStatement(query);
+        PreparedStatement preparedStatement = QueriesManager.getPreparedStatement(connection, "insertRecord");
+        return preparedStatement;
     }
     /**
      * Возвращает запрос на обновление значений записи в таблице PRODUCT_CODE 
@@ -186,13 +181,13 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return Запрос в виде объекта класса {@link PreparedStatement}
      */
-    public static PreparedStatement getUpdateQuery(Connection connection) throws SQLException {
-        
-        String query =  "Update Product_Code set DISCOUNT_CODE = ?, DESCRIPTION = ? where PROD_CODE = ?";
-        return connection.prepareStatement(query);
+    public static PreparedStatement getUpdateQuery(Connection connection) throws SQLException, IOException {
         /*
          * TODO #11 Реализуйте метод getUpdateQuery
          */
+        PreparedStatement preparedStatement = QueriesManager.getPreparedStatement(connection, "updateRecord");
+        return preparedStatement;
+        
     }
     /**
      * Преобразует {@link ResultSet} в коллекцию объектов типа {@link ProductCode}
@@ -203,16 +198,17 @@ public class ProductCode {
      * @throws SQLException 
      */
     public static Collection<ProductCode> convert(ResultSet set) throws SQLException {
-        
+        /*
+         * TODO #12 Реализуйте метод convert
+         */
         Collection<ProductCode> collection = new LinkedList<>();
-        while(set.next()) {
-                 
+        while (set.next()) {
             String code = set.getString("PROD_CODE");
-            char discountCode = set.getString("DISCOUNT_CODE").charAt(0);
+            String discountCode = set.getString("DISCOUNT_CODE");
             String description = set.getString("DESCRIPTION");
-            collection.add(new ProductCode(code, discountCode, description));
+            collection.add(new ProductCode(code, discountCode.charAt(0), description));
         }
-        return collection;
+        return new ArrayList<ProductCode>(collection);
     }
     /**
      * Сохраняет текущий объект в базе данных. 
@@ -223,26 +219,29 @@ public class ProductCode {
      * 
      * @param connection действительное соединение с базой данных
      */
-    public void save(Connection connection) throws SQLException {
-        
-      Collection<ProductCode> collection = ProductCode.all(connection);
-      
-      if(!collection.contains(this)) {
-                PreparedStatement statement = getUpdateQuery(connection);
-                statement.setString(1, this.getCode());
-                statement.setString(2, String.valueOf(this.getDiscountCode()));
-                statement.setString(3, this.getDescription());
-                statement.executeUpdate();
-      }
-          //update
-      else {
-                PreparedStatement statement = getInsertQuery(connection);
-                statement.setString(1, this.getCode());
-                statement.setString(2, String.valueOf(this.getDiscountCode()));
-                statement.setString(3, this.getDescription());
-                statement.executeUpdate();
-          //insert
-      }
+    public void save(Connection connection) throws SQLException, IOException {
+        /*
+         * TODO #13 Реализуйте метод convert
+         */
+        try (PreparedStatement selectStatemant = QueriesManager.getPreparedStatement(connection, "select");) {
+            selectStatemant.setString(1, code);
+            selectStatemant.setString(2, description);
+            try (ResultSet resultSet = selectStatemant.executeQuery()) {
+                if (!resultSet.next()) {
+                    PreparedStatement ps = getInsertQuery(connection);
+                    ps.setString(1, code);
+                    ps.setString(2, String.valueOf(discountCode));
+                    ps.setString(3, description);
+                    ps.execute();
+                } else {
+                    PreparedStatement ps = getUpdateQuery(connection);
+                    ps.setString(1, code);
+                    ps.setString(2, String.valueOf(discountCode));
+                    ps.setString(3, description);
+                    ps.executeUpdate();
+                }
+            }
+        }
     }
     /**
      * Возвращает все записи таблицы PRODUCT_CODE в виде коллекции объектов
@@ -251,8 +250,9 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return коллекция объектов типа {@link ProductCode}
      * @throws SQLException 
+     * @throws java.io.IOException 
      */
-    public static Collection<ProductCode> all(Connection connection) throws SQLException {
+    public static Collection<ProductCode> all(Connection connection) throws SQLException, IOException {
         try (PreparedStatement statement = getSelectQuery(connection)) {
             try (ResultSet result = statement.executeQuery()) {
                 return convert(result);

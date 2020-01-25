@@ -1,12 +1,12 @@
 package ru.avalon.java.j30.labs;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Properties;
+
 /**
  * Лабораторная работа №3
  * <p>
@@ -32,11 +32,9 @@ public class Main {
             code.save(connection);
             printAllCodes(connection);
 
-            code.setCode("MV");
-            code.save(connection);
-            printAllCodes(connection);
+            System.out.println("===============================================");
             
-            code.setDescription("MV");
+            code.setCode("MV");
             code.save(connection);
             printAllCodes(connection);
         }
@@ -50,7 +48,7 @@ public class Main {
      * @param connection действительное соединение с базой данных
      * @throws SQLException 
      */    
-    private static void printAllCodes(Connection connection) throws SQLException {
+    private static void printAllCodes(Connection connection) throws SQLException, IOException {
         Collection<ProductCode> codes = ProductCode.all(connection);
         for (ProductCode code : codes) {
             System.out.println(code);
@@ -61,11 +59,11 @@ public class Main {
      * 
      * @return URL в виде объекта класса {@link String}
      */
-    private static String getUrl() {
+    private static String getUrl() throws IOException {
         /*
          * TODO #02 Реализуйте метод getUrl
          */
-        return "jdbc:derby://localhost:1527/db-lab-2-j130";
+        return getProperties().getProperty("url");
     }
     /**
      * Возвращает параметры соединения
@@ -78,11 +76,10 @@ public class Main {
          * TODO #03 Реализуйте метод getProperties
          */
         Properties properties = new Properties();
-        
-        try(InputStream stream = ClassLoader.getSystemResourceAsStream("ru\\avalon\\java\\j30\\labs\\properties\\newproperties.properties")) {
-            properties.load(stream);
+        try (InputStream in = ClassLoader.getSystemResourceAsStream("resources/database.properties")) {
+            properties.load(in);
+            return properties;
         }
-        return properties; 
     }
     /**
      * Возвращает соединение с базой данных Sample
@@ -90,10 +87,14 @@ public class Main {
      * @return объект типа {@link Connection}
      * @throws SQLException 
      */
-    
-    
     private static Connection getConnection() throws SQLException, IOException {
-        return DriverManager.getConnection(getUrl(), getProperties());
+        /*
+         * TODO #04 Реализуйте метод getConnection
+         */
+        String url = getUrl();
+        String user = getProperties().getProperty("user");
+        String password = getProperties().getProperty("password");
+        return DriverManager.getConnection(url, user, password);
     }
     
 }
